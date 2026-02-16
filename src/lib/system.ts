@@ -15,9 +15,14 @@ function getCpuUsage() {
 }
 
 async function getCpuTemp() {
-    const { stdout } = await execAsync("vcgencmd measure_temp");
-    // in celsius! OBVIOUSLY!
-    return parseFloat(stdout.replace("temp=", "").replace("'C", ""));
+    try {
+        const { stdout } = await execAsync("vcgencmd measure_temp");
+        // in celsius! OBVIOUSLY!
+        return parseFloat(stdout.replace("temp=", "").replace("'C", ""));
+    } catch (err) {
+        console.error("Error getting CPU temp:", err);
+        return 0;  // Return 0 if we can't get the temp
+    }
 }
 
 function bytesToGB(bytes: number) {
@@ -25,24 +30,29 @@ function bytesToGB(bytes: number) {
 }
 
 export async function getSystemDetails() {
-    // Get CPU usage
-    const cpuUsage = getCpuUsage();
+    try {
+        // Get CPU usage
+        const cpuUsage = getCpuUsage();
 
-    // Get memory info
-    const totalMem = os.totalmem();
-    const freeMem = os.freemem();
-    const usedMem = totalMem - freeMem;
+        // Get memory info
+        const totalMem = os.totalmem();
+        const freeMem = os.freemem();
+        const usedMem = totalMem - freeMem;
 
-    const cpuTemp = await getCpuTemp();
+        const cpuTemp = await getCpuTemp();
 
-    return {
-        os,
-        cpuTemp,
-        cpuUsage,
-        memoryUsage: {
-            total: parseFloat(bytesToGB(totalMem)),
-            used: parseFloat(bytesToGB(usedMem)),
-            free: parseFloat(bytesToGB(freeMem)),
-        },
-    };
+        return {
+            os,
+            cpuTemp,
+            cpuUsage,
+            memoryUsage: {
+                total: parseFloat(bytesToGB(totalMem)),
+                used: parseFloat(bytesToGB(usedMem)),
+                free: parseFloat(bytesToGB(freeMem)),
+            },
+        };
+    } catch (err) {
+        console.error("Error getting system details:", err);
+        throw err;
+    }
 }
